@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class EdgeFlattener
+public static class Vignette
 {
     public static float[,] GenerateEdges(int size, float a, float b) {
         float[,] edgeArray = new float[size, size];
@@ -13,10 +13,12 @@ public static class EdgeFlattener
                 float x = i / (float)size * 2 - 1;
                 float y = j / (float)size * 2 - 1;
 
-                //square edges
+                //square vignette
                 //float k = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
-                //circular edges
+
+                //circular vignette
                 float k = Mathf.Sqrt(x * x + y * y) / Mathf.Sqrt(2);
+
                 edgeArray[i, j] = Calculate(k, a, b);
             }
         }

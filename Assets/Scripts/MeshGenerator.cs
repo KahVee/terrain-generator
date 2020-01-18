@@ -5,6 +5,7 @@ using UnityEngine;
 
 public static class MeshGenerator {
 
+    //Generates a mesh from a noise map
     public static MeshData GenerateMesh(float[,] heightmap, float amplitude, AnimationCurve curve, LevelGenerator.PolygonAlignment alignment) {
         int width = heightmap.GetLength(0);
         int height = heightmap.GetLength(1);
@@ -14,8 +15,7 @@ public static class MeshGenerator {
 
         //Different ways of flipping the triangles in adjacent squares
         Func<int, int, bool> polygonAlignmentCondition = (a, b) => true;
-        switch (alignment)
-        {
+        switch (alignment) {
             case LevelGenerator.PolygonAlignment.aligned:
                 polygonAlignmentCondition = (a, b) => true;
                 break;
@@ -29,18 +29,26 @@ public static class MeshGenerator {
                 break;
         }
 
-        for (int y = 0; y < height; y++){
-            for (int x = 0; x < width; x++){
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+
                 float vertHeight = heightmap[x,y];
+
+                //Flattens the "water" parts down to 0, otherwise scales the noise values according to a given curve and amplitude
+                //TODO: Change "magic number" to something more easily accessible (water color height determined in LevelDisplayer.colorTexture())
                 if(vertHeight < 0.25) {
                     vertHeight = 0;
                 } else {
                     vertHeight = curve.Evaluate(heightmap[x, y]) * amplitude;
                 }
+
+                //Assigns the scaled noise value to corresponding vertex
                 meshData.verts[vIndex] = new Vector3(x, vertHeight, y);
+                //Assigns a point to the correct UV
                 meshData.uvs[vIndex] = new Vector2(x / (float)width, y / (float)height);
 
-                if(x < width-1 && y < height -1) {
+                //Creates a square with two triangles. The orientation of the triangles depend on the condition passed to GenerateMesh
+                if(x < width-1 && y < height-1) {
                     if (polygonAlignmentCondition(x, y)) {
                         meshData.AddTriangle(vIndex, vIndex + width, vIndex + width + 1);
                         meshData.AddTriangle(vIndex + width + 1, vIndex + 1, vIndex);
@@ -57,6 +65,7 @@ public static class MeshGenerator {
         return meshData;
     }
 
+    //Creates a flat MeshData with two triangles
     public static MeshData FlatMesh(int size) {
         MeshData meshData = new MeshData(2, 2);
         meshData.verts[0] = new Vector3(0, 0, 0);
@@ -74,6 +83,7 @@ public static class MeshGenerator {
     }    
 }
 
+//Helper class for storing all the mesh variables
 public class MeshData {
     public Vector3[] verts;
     public int[] tris;
@@ -94,9 +104,14 @@ public class MeshData {
         triIndex += 3;
     }
 
+    /*Changes the vertices and uvs so that each triangle has their own vertices.
+     *Each triangle's lighting is calculated from their vertices' normals, and if there are no shared vertices between triangles,
+     *the triangles become "flatly" lit.
+     */
     void FlatVertices() {
         Vector3[] flatVerts = new Vector3[tris.Length];
         Vector2[] flatUvs = new Vector2[tris.Length];
+
         for (int i = 0; i < tris.Length; i++) {
             flatVerts[i] = verts[tris[i]];
             flatUvs[i] = uvs[tris[i]];
@@ -109,10 +124,12 @@ public class MeshData {
 
     public Mesh CreateMesh(bool flatShading) {
         Mesh mesh = new Mesh();
+
         //Makes the polygons flat-shaded
         if (flatShading) {
             FlatVertices();
         }
+
         mesh.vertices = verts;
         mesh.triangles = tris;
         mesh.uv = uvs;

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour
 {
+    //Parameters are public to make it as simple as possible to change them in the Unity editor.
     public int width;
     public int height;
     public int seed;
@@ -19,6 +20,7 @@ public class LevelGenerator : MonoBehaviour
     public float amplitude;
     public bool islandMode;
     public bool flatShading;
+    public enum PolygonAlignment { aligned, mismatched, shuffled };
     public PolygonAlignment polygonAlignment;
     public AnimationCurve meshHeightCurve;
     [Range(0.1f, 10f)]
@@ -27,12 +29,18 @@ public class LevelGenerator : MonoBehaviour
     [HideInInspector]
     public LevelDisplayer display;
 
-    public void GenerateMap()
-    {
+    void Start() {
+        GenerateMap();
+    }
+
+    public void GenerateMap() {
+        //Generates noise that will be applied to the mesh
         float[,] noise = Noise.NoiseMap(width, height, noiseScale, octaves, persistence, lacunarity, seed, islandMode, a, b);
 
+        //Finds the displayer object and generates a mesh and texture for it to display.
         display = FindObjectOfType<LevelDisplayer>();
         display.DrawMesh(MeshGenerator.GenerateMesh(noise, amplitude, meshHeightCurve, polygonAlignment), display.colorTexture(noise), flatShading);
+
 
         if(islandMode) {
             Color seaColor = new Color32(69, 91, 127, 255);
@@ -49,9 +57,10 @@ public class LevelGenerator : MonoBehaviour
             display.DrawSea(surroundingMeshes, texture, width-1);
         }
 
-        display.DrawArray(EdgeFlattener.GenerateEdges(width, a, b));
+        display.DrawArray(Vignette.GenerateEdges(width, a, b));
     }
-
+    
+    //Creates flat sea meshes and calls the display to display them around the main terrain
     public MeshData[] GenerateIslandSurroundings() {
         MeshData[] surroundingMeshes = new MeshData[8];
         for (int i = 0; i < 8; i++) {
@@ -59,6 +68,4 @@ public class LevelGenerator : MonoBehaviour
         }
         return surroundingMeshes;
     }
-
-    public enum PolygonAlignment { aligned, mismatched, shuffled };
 }

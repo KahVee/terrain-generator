@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 
+//Updates the mesh when parameters are changed in the editor even outside play mode
 [CustomEditor (typeof(LevelGenerator))]
 public class LevelGeneratorEditor : Editor
 {
